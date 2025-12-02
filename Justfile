@@ -1,2 +1,5 @@
+day2:
+    cargo run --bin day02
+
 day1:
-    cargo run --bin aoc2025
+    cargo run --bin day01

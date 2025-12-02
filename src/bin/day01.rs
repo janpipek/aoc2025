@@ -27,6 +27,7 @@ fn read_movements() -> Vec<i32> {
 }
 
 fn main() {
+    println!("Day 1");
     part1();
     part2();
 }
