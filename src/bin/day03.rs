@@ -23,13 +23,11 @@ fn compute_joltage(line: String) -> u32 {
         // The largest digit is at the end, it will come second
         let other = digit_position[1].1.to_digit(10).unwrap();
         let joltage = 10 * other + largest;
-        print!("{} -> {}\n", line, joltage);
         joltage
     } else {
         // The largest digit is not at the end, it will come first
         let other = line[largest_pos + 1..].chars().max().unwrap().to_digit(10).unwrap();
         let joltage = 10 * largest + other;
-        print!("{} -> {}\n", line, joltage);
         joltage
     }
 }
