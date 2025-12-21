@@ -60,8 +60,18 @@ fn part1(input: &Vec<(usize, usize, usize)>, max_steps: usize) -> usize {
     clusters.iter().map(|cluster| cluster.len()).sorted().rev().take(3).product()
 }
 
-fn part2(_input: &Vec<(usize, usize, usize)>) -> usize {
-    0
+fn part2(input: &Vec<(usize, usize, usize)>) -> usize {
+    let mut clusters: Vec<HashSet<usize>> = (0..input.len()).map(|i| HashSet::from([i as usize])).collect();
+    let closest_pairs: Vec<(usize, usize)> = (0..input.len()).tuple_combinations().sorted_by(
+        |&(a, b), &(c, d)| distance_squared(&input[a], &input[b]).cmp(&distance_squared(&input[c], &input[d]))
+    ).collect();
+    for pair in closest_pairs {
+        maybe_merge_clusters(&pair, &mut clusters);
+        if clusters.len() == 1 {
+            return input[pair.0].0 * input[pair.1].0;
+        }
+    }
+    panic!("We should not have reached this point.")
 }
 
 #[cfg(test)]
@@ -95,5 +105,34 @@ mod tests {
 
         let result = part1(&input, 10);
         assert_eq!(result, 40);
+    }
+
+    #[test]
+    fn test_part2() {
+        let input = vec![
+            (162,817,812),
+            (57,618,57),
+            (906,360,560),
+            (592,479,940),
+            (352,342,300),
+            (466,668,158),
+            (542,29,236),
+            (431,825,988),
+            (739,650,466),
+            (52,470,668),
+            (216,146,977),
+            (819,987,18),
+            (117,168,530),
+            (805,96,715),
+            (346,949,466),
+            (970,615,88),
+            (941,993,340),
+            (862,61,35),
+            (984,92,344),
+            (425,690,689)
+        ];
+
+        let result = part2(&input);
+        assert_eq!(result, 25272);
     }
 }
