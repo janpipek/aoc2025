@@ -3,8 +3,8 @@ use itertools::Itertools;
 
 use aoc2025::read_lines;
 
-pub fn read_input() -> Vec<(i64, i64, i64)> {
-    let lines = read_lines("data/data08.txt");
+pub fn read_input() -> Vec<(usize, usize, usize)> {
+    let lines = read_lines("data/day08.txt");
     lines.iter().map(|line| {
         let parts: Vec<&str> = line.split(",").collect();
         (parts[0].parse().unwrap(), parts[1].parse().unwrap(), parts[2].parse().unwrap())
@@ -20,36 +20,47 @@ fn main() {
     println!("Part 2: {}", result2);
 }
 
-fn distance_squared(a: &(i64, i64, i64), b: &(i64, i64, i64)) -> i64 {
-    (a.0 - b.0).pow(2) + (a.1 - b.1).pow(2) + (a.2 - b.2).pow(2)
+fn distance_squared(a: &(usize, usize, usize), b: &(usize, usize, usize)) -> usize {
+    ((a.0 as i64 - b.0 as i64).pow(2) + (a.1 as i64 - b.1 as i64).pow(2) + (a.2 as i64 - b.2 as i64).pow(2)) as usize
 }
 
-fn maybe_merge_clusters(_connection: &(i64, i64), mut _clusters: &Vec<HashSet<i64>>) -> bool {
-    // TODO: Implement
-    true
-}
-
-fn part1(input: &Vec<(i64, i64, i64)>, steps: i64) -> i64 {
-    let mut clusters: Vec<HashSet<i64>> = (0..input.len()).map(|i| HashSet::from([i as i64])).collect();
-    let closest_pairs: Vec<(i64, i64)> = (0..input.len()).tuple_combinations().sorted_by(
-        |&(a, b), &(c, d)| distance_squared(&input[a], &input[b]).cmp(&distance_squared(&input[c], &input[d]))
-    ).collect();
-
-    let mut steps_taken = 0;
-
-    for pair in closest_pairs {
-        let (a, b) = pair;
-        if maybe_merge_clusters(&pair, &clusters) {
-            steps_taken += 1;
-            if steps_taken == steps {
-                break;
+fn maybe_merge_clusters(_connection: &(usize, usize), clusters: &mut Vec<HashSet<usize>>) {
+    for (i1, cluster1) in clusters.clone().iter().enumerate() {
+        if cluster1.contains(&_connection.0) {
+            if cluster1.contains(&_connection.1) {
+                return;
+            }
+            for (i2, cluster2) in clusters.clone().iter().enumerate() {
+                if i1 == i2 {
+                    continue;
+                }
+                if cluster2.contains(&_connection.1) {
+                    let merged_cluster = cluster1.union(cluster2).cloned().collect();
+                    clusters[i1] = merged_cluster;
+                    clusters.remove(i2);
+                    return;
+                }
             }
         }
+    }
+    panic!("We should not have reached this point.")
+}
+
+fn part1(input: &Vec<(usize, usize, usize)>, max_steps: usize) -> usize {
+    let mut clusters: Vec<HashSet<usize>> = (0..input.len()).map(|i| HashSet::from([i as usize])).collect();
+    let closest_pairs: Vec<(usize, usize)> = (0..input.len()).tuple_combinations().sorted_by(
+        |&(a, b), &(c, d)| distance_squared(&input[a], &input[b]).cmp(&distance_squared(&input[c], &input[d]))
+    ).collect();
+    for (step, pair) in closest_pairs.iter().enumerate() {
+        if step == max_steps {
+            break;
+        }
+        maybe_merge_clusters(&pair, &mut clusters);
     }
     clusters.iter().map(|cluster| cluster.len()).sorted().rev().take(3).product()
 }
 
-fn part2(_input: &Vec<(i64, i64, i64)>) -> i64 {
+fn part2(_input: &Vec<(usize, usize, usize)>) -> usize {
     0
 }
 

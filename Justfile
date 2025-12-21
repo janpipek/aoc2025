@@ -1,3 +1,6 @@
+day08:
+    cargo run --bin day08
+
 day09:
     cargo run --bin day09
 
