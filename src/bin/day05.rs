@@ -1,83 +1,88 @@
-use std::fs;
+use aoc2025::read_lines;
+use std::cmp::{max, min};
 
-fn read_lines() -> Vec<String> {
-    let lines = fs::read_to_string("data/day05.txt").expect("Cannot read file.");
-    lines.lines().map(|l| String::from(l)).filter(|l| l.trim().len() > 0).collect()
+struct Input {
+    fresh: Vec<(u64, u64)>,
+    available: Vec<u64>,
 }
 
-fn read_input() -> Vec<Vec<bool>> {
-    let lines = read_lines();
-    lines.iter().filter(|l| l.len() > 0).map(|line| line.chars().map(|c| c == '@').collect()).collect()
+fn read_input() -> Input {
+    let lines = read_lines("data/day05.txt");
+    let mut fresh: Vec<(u64, u64)> = vec![];
+    let mut available: Vec<u64> = vec![];
+    lines.iter().for_each(|line| {
+        if line.is_empty() {
+        } else if line.contains('-') {
+            let pair: Vec<u64> = line.split('-').map(|s| s.parse().unwrap()).collect();
+            if pair.len() != 2 {
+                panic!("A range must contain two numbers");
+            }
+            fresh.push((pair[0], pair[1]))
+        } else {
+            let i: u64 = line.parse().unwrap();
+            available.push(i);
+        }
+    });
+    Input { fresh, available }
+}
+
+fn is_fresh(i: u64, fresh: &Vec<(u64, u64)>) -> bool {
+    fresh
+        .iter()
+        .map(|pair| i >= pair.0 && i <= pair.1)
+        .any(|r| r)
 }
 
 fn main() {
-    println!("Day 5");
     part1();
     part2();
 }
 
-fn is_pickable(input: &Vec<Vec<bool>>, x: usize, y: usize) -> bool {
-    let width = input[0].len();
-    let height = input.len();
-    if !input[y][x] {
-        return false;
-    }
-    let mut count = 0;
-    for i in -1..=1 {
-        for j in -1..=1 {
-            if i == 0 && j == 0 {
-                continue;
-            }
-            let nx = x as i32 + i;
-            let ny = y as i32 + j;
-            if nx >= 0 && nx < width as i32 && ny >= 0 && ny < height as i32 {
-                count += input[ny as usize][nx as usize] as u32;
-            }
-        }
-    }
-    count < 4
-}
-
-fn count_them(input: &Vec<Vec<bool>>) -> i32 {
-    let width = input[0].len();
-    let height = input.len();
-    let mut total_count = 0;
-    for x in 0..width {
-        for y in 0..height {
-            total_count += is_pickable(&input, x, y) as i32;
-        }
-    }
-    total_count
-}
-
 fn part1() {
     let input = read_input();
-    let total_count = count_them(&input);
-    println!("Part 1: {}", total_count);
+    let count: u64 = input
+        .available
+        .iter()
+        .map(|ingredient| is_fresh(*ingredient, &input.fresh) as u64)
+        .sum();
+    println!("Part 1: {}", count);
+}
+
+fn merge_one_pair(fresh: &Vec<(u64, u64)>) -> (bool, Vec<(u64, u64)>) {
+    let mut merged: Vec<(u64, u64)> = vec![];
+    for i in 0..(fresh.len() - 1) {
+        let first = fresh[i];
+        let second = fresh[i + 1];
+        if (second.0 > first.1) || (first.0 > second.1) {
+            merged.push(first);
+            continue;
+        };
+        let pair = (min(first.0, second.0), max(first.1, second.1));
+        merged.push(pair);
+        for k in (i + 2)..fresh.len() {
+            merged.push(fresh[k]);
+        }
+        return (true, merged);
+    }
+    (false, fresh.clone())
+}
+
+fn total_size(ranges: &Vec<(u64, u64)>) -> u64 {
+    ranges.iter().map(|r| r.1 - r.0 + 1).sum()
 }
 
 fn part2() {
-    println!("Part 2: ---");
-    let mut input = read_input();
-    let width = input[0].len();
-    let height = input.len();
-    let mut total_count = 0; // count_them(&input);
-    loop {
-        let mut current_count = 0;
-        for x in 0..width {
-            for y in 0..height {
-                if input[y][x] {
-                    if is_pickable(&input, x, y) {
-                        current_count += 1;
-                        input[y][x] = false;
-                    }
-                }
-            }
-        }
-        if current_count == 0 {
-            break;
-        }
-        total_count += current_count;
+    let input = read_input();
+
+    let mut fresh = input.fresh;
+    let mut changed = true;
+
+    fresh.sort_by_key(|r| r.0);
+
+    while changed {
+        (changed, fresh) = merge_one_pair(&fresh);
     }
-    println!("Part 2: {}", total_count);
+
+    let count = total_size(&fresh);
+    println!("Part 2: {}", count);
 }
