@@ -10,8 +10,8 @@ struct Input {
 
 fn parse_input(lines: &Vec<String>) -> Input {
     Input {
-        width: lines[0].len(),
         height: lines.len(),
+        width: lines[0].len(),
         start: lines[0].find('S').unwrap(),
         is_splitter: lines[1..lines.len()].iter().map(
             |l| l.chars().map(|c| c == '^').collect()
@@ -38,10 +38,10 @@ fn part1(input: &Input) -> u64 {
     let mut beams = HashSet::new();
     beams.insert(input.start);
     for i in 1..input.height {
-        let line: &Vec<bool> = &input.is_splitter[i-1];
+        let splitters: &Vec<bool> = &input.is_splitter[i-1];
         let mut new_beams = HashSet::new();
         for j in beams.iter() {
-            if line[*j] {
+            if splitters[*j] {
                 new_beams.insert(j-1);
                 new_beams.insert(j+1);
                 splits += 1;
@@ -55,7 +55,22 @@ fn part1(input: &Input) -> u64 {
 }
 
 fn part2(input: &Input) -> u64 {
-    0
+    let mut histories: Vec<u64> = vec![0; input.width];
+    histories[input.start] = 1;
+    for i in 1..input.height {
+        let mut new_histories = vec![0; input.width];
+        let splitters: &Vec<bool> = &input.is_splitter[i-1];
+        for (j, count) in histories.iter().enumerate() {
+            if splitters[j] {
+                new_histories[j-1] += count;
+                new_histories[j+1] += count;
+            } else {
+                new_histories[j] += count;
+            }
+        }
+        histories = new_histories;
+    }
+    histories.iter().sum()
 }
 
 #[cfg(test)]
@@ -71,6 +86,8 @@ mod tests {
 
     #[test]
     fn test_part2() {
-
+        let input = read_input("data/day07-test.txt");
+        let result = part2(&input);
+        assert_eq!(result, 40);
     }
 }
