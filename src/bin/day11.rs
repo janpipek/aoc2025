@@ -16,8 +16,7 @@ struct Input {
 
 fn read_input(path: &str) -> Input {
     let mut device_map = HashMap::new();
-    for line in read_lines(path)
-    {
+    for line in read_lines(path) {
         let parts: Vec<&str> = line.split(':').collect();
         if parts.len() != 2 {
             panic!("Invalid input: {}", line);
@@ -35,41 +34,90 @@ fn part1(input: &Input) -> i64 {
     count_subpaths(&initial, &input.device_map, &target)
 }
 
-fn count_subpaths(current: &Vec<String>, device_map: &HashMap<String, Vec<String>>, target: &String) -> i64 {
+fn count_subpaths(
+    current: &Vec<String>,
+    device_map: &HashMap<String, Vec<String>>,
+    target: &String,
+) -> i64 {
     let item = current.last().unwrap();
     if item == target {
-        return 1
+        return 1;
     }
     let branches = device_map.get(item).unwrap();
-    branches.iter().map( |branch| {
-        if current.contains(branch) { 0 } else {
-            let mut new = current.clone();
-            new.push(branch.clone());
-            count_subpaths(&new, device_map, target)
-        }
-    }).sum()
+    branches
+        .iter()
+        .map(|branch| {
+            if current.contains(branch) {
+                0
+            } else {
+                let mut new = current.clone();
+                new.push(branch.clone());
+                count_subpaths(&new, device_map, target)
+            }
+        })
+        .sum()
 }
 
-fn count_subpaths_including(current: &Vec<String>, device_map: &HashMap<String, Vec<String>>, target: &String, required: &Vec<String>) -> i64 {
+fn find_subpaths(
+    current: &Vec<String>,
+    device_map: &HashMap<String, Vec<String>>,
+    target: &String,
+) -> Vec<Vec<String>> {
     let item = current.last().unwrap();
+
     if item == target {
-        return required.iter().all(|r| current.contains(r)) as i64;
-    }
-    let branches = device_map.get(item).unwrap();
-    branches.iter().map( |branch| {
-        if current.contains(branch) { 0 } else {
-            let mut new = current.clone();
-            new.push(branch.clone());
-            count_subpaths_including(&new, device_map, target, required)
+        let mut new = current.clone();
+        new.push(item.clone());
+        vec![new]
+    } else {
+        let mut result: Vec<Vec<String>> = Vec::new();
+        match device_map.get(item) {
+            Some(branches) => {
+                for branch in branches {
+                    if !current.contains(branch) {
+                        let mut new = current.clone();
+                        new.push(branch.clone());
+                        result.extend(find_subpaths(&new, device_map, target));
+                    }
+                }
+            }
+            None => {}
         }
-    }).sum()
+        result
+    }
+}
+
+fn find_subpaths_many(
+    current: &Vec<Vec<String>>,
+    device_map: &HashMap<String, Vec<String>>,
+    target: &String,
+) -> Vec<Vec<String>> {
+    let mut result: Vec<Vec<String>> = Vec::new();
+    for path in current {
+        result.extend(find_subpaths(&path, device_map, target));
+    }
+    result
 }
 
 fn part2(input: &Input) -> i64 {
-    let initial = vec![String::from("svr")];
-    let required = vec![String::from("fft"), String::from("dac")];
-    let target = String::from("out");
-    count_subpaths_including(&initial, &input.device_map, &target, &required)
+    let svr_fft = find_subpaths(
+        &vec![String::from("svr")],
+        &input.device_map,
+        &String::from("fft"),
+    );
+    let svr_dac = find_subpaths(
+        &vec![String::from("svr")],
+        &input.device_map,
+        &String::from("dac"),
+    );
+
+    let svr_fft_dac = find_subpaths_many(&svr_fft, &input.device_map, &String::from("dac"));
+    let svr_dac_fft = find_subpaths_many(&svr_dac, &input.device_map, &String::from("fft"));
+
+    let svr_fft_dac_out = find_subpaths_many(&svr_fft_dac, &input.device_map, &String::from("out"));
+    let svr_dac_fft_out = find_subpaths_many(&svr_dac_fft, &input.device_map, &String::from("out"));
+
+    (svr_dac_fft_out.len() + svr_fft_dac_out.len()) as i64
 }
 
 #[cfg(test)]
