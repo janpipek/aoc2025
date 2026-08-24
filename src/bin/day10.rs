@@ -113,5 +113,6 @@ mod tests {
     fn test_part2() {
         let input = read_input("data/day10-test.txt");
         let result = part2(&input);
+        assert_eq!(33, result)
     }
 }
