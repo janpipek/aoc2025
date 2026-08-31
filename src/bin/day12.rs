@@ -96,6 +96,9 @@ mod tests {
         let input = read_input("data/day12-test.txt");
         assert_eq!(input.presents.len(), 6);
         assert_eq!(input.regions.len(), 3);
+
+        assert_eq!(input.presents[5].grid[1], vec![false, true, false]);
+        assert_eq!(input.regions[2].size, (12, 5));
     }
 
     #[test]
